@@ -27,25 +27,13 @@ function formatDate(date) {
 
 // ===== SORT OBJECT (CHUẨN VNPay) =====
 function sortObject(obj) {
-    let sorted = {};
-    let str = [];
-    let key;
-
-    for (key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            str.push(encodeURIComponent(key));
-        }
-    }
-
-    str.sort();
-
-    for (key = 0; key < str.length; key++) {
-        sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, "+");
-    }
-
-    return sorted;
+    return Object.keys(obj)
+        .sort()
+        .reduce((result, key) => {
+            result[key] = obj[key];
+            return result;
+        }, {});
 }
-
 // ===== HOME =====
 app.get("/", (req, res) => {
     res.send("Server OK");
@@ -79,20 +67,21 @@ let expireDate = new Date(now.getTime() + 15 * 60 * 1000);
 
 let vnp_ExpireDate = formatDate(expireDate);
     
-    let vnp_Params = {};
-    vnp_Params['vnp_Version'] = '2.1.0';
-    vnp_Params['vnp_Command'] = 'pay';
-    vnp_Params['vnp_TmnCode'] = vnp_TmnCode;
-    vnp_Params['vnp_Locale'] = 'vn';
-    vnp_Params['vnp_CurrCode'] = 'VND';
-    vnp_Params['vnp_TxnRef'] = Date.now().toString();
-    vnp_Params['vnp_OrderInfo'] = 'Thanh toan don hang'; // KHÔNG dấu
-    vnp_Params['vnp_OrderType'] = 'other';
-    vnp_Params['vnp_Amount'] = 10000 * 100;
-    vnp_Params['vnp_ReturnUrl'] = returnUrl;
-    vnp_Params['vnp_IpAddr'] = ipAddr;
-    vnp_Params['vnp_CreateDate'] = createDate;
-    vnp_Params['vnp_ExpireDate'] = vnp_ExpireDate;
+   let vnp_Params = {
+    vnp_Version: '2.1.0',
+    vnp_Command: 'pay',
+    vnp_TmnCode: vnp_TmnCode,
+    vnp_Amount: 10000 * 100,
+    vnp_CurrCode: 'VND',
+    vnp_TxnRef: Date.now().toString(),
+    vnp_OrderInfo: 'Thanh toan don hang',
+    vnp_OrderType: 'other',
+    vnp_Locale: 'vn',
+    vnp_ReturnUrl: returnUrl,
+    vnp_IpAddr: ipAddr,
+    vnp_CreateDate: createDate,
+    vnp_ExpireDate: vnp_ExpireDate
+};
 
     // 🔥 SORT + ENCODE (THEO DOC)
     vnp_Params = sortObject(vnp_Params);
@@ -100,12 +89,12 @@ let vnp_ExpireDate = formatDate(expireDate);
     // 🔥 SIGN DATA (KHÔNG encode)
     let signData = qs.stringify(vnp_Params, { encode: false });
 
-    console.log("SIGN DATA:", signData);
+let signed = crypto
+    .createHmac("sha512", vnp_HashSecret)
+    .update(Buffer.from(signData, 'utf-8'))
+    .digest("hex");
 
-    let hmac = crypto.createHmac("sha512", vnp_HashSecret);
-    let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
-
-    vnp_Params['vnp_SecureHash'] = signed;
+vnp_Params['vnp_SecureHash'] = signed;
 
     // 🔥 BUILD URL (PHẢI encode = true)
     let paymentUrl = vnp_Url + '?' + qs.stringify(vnp_Params, { encode: true });
