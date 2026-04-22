@@ -23,10 +23,16 @@ app.get("/pay", (req, res) => {
         vnp_OrderInfo: "Test thanh toan",
         vnp_OrderType: "other",
         vnp_Locale: "vn",
-        vnp_ReturnUrl: "vnpay-odoo-production.up.railway.app/",
+        vnp_ReturnUrl: "vnpay-odoo-production.up.railway.app/return",
         vnp_IpAddr: "127.0.0.1",
         vnp_CreateDate: new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0,14)
     };
+
+app.get("/return", (req, res) => {
+    console.log("VNPay trả về:", req.query);
+
+    res.send("Đã thanh toán xong (test bước 3)");
+});
 
     let signData = qs.stringify(params, { encode: false });
 
