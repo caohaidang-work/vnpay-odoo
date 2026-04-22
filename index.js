@@ -1,12 +1,27 @@
 const express = require("express");
+const crypto = require("crypto");
+const qs = require("qs");
+
 const app = express();
+
+function formatDate(date) {
+    const pad = (n) => n.toString().padStart(2, '0');
+    return date.getFullYear().toString() +
+        pad(date.getMonth() + 1) +
+        pad(date.getDate()) +
+        pad(date.getHours()) +
+        pad(date.getMinutes()) +
+        pad(date.getSeconds());
+}
 
 app.get("/", (req, res) => {
   res.send("Server OK");
 });
 
-const crypto = require("crypto");
-const qs = require("qs");
+app.get("/return", (req, res) => {
+    console.log("VNPay trả về:", req.query);
+    res.send("Đã thanh toán xong (test bước 3)");
+});
 
 app.get("/pay", (req, res) => {
 
@@ -24,26 +39,26 @@ app.get("/pay", (req, res) => {
         vnp_OrderInfo: "Test thanh toan",
         vnp_OrderType: "other",
         vnp_Locale: "vn",
-        vnp_ReturnUrl: "vnpay-odoo-production.up.railway.app/return",
+        vnp_ReturnUrl: "https://vnpay-odoo-production.up.railway.app/return",
         vnp_IpAddr: "127.0.0.1",
-        vnp_CreateDate: new Date().toISOString().replace(/[-:TZ.]/g, "").slice(0,14)
+        vnp_CreateDate: formatDate(new Date())
     };
 
-app.get("/return", (req, res) => {
-    console.log("VNPay trả về:", req.query);
-
-    res.send("Đã thanh toán xong (test bước 3)");
-});
+    params = Object.keys(params)
+        .sort()
+        .reduce((result, key) => {
+            result[key] = params[key];
+            return result;
+        }, {});
 
     let signData = qs.stringify(params, { encode: false });
 
     let hmac = crypto.createHmac("sha512", vnp_HashSecret);
-    let signed = hmac.update(signData).digest("hex");
+    let signed = hmac.update(signData, 'utf-8').digest("hex");
 
     params.vnp_SecureHash = signed;
 
-    let paymentUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?" 
-        + qs.stringify(params, { encode: false });
+    let paymentUrl = vnp_Url + "?" + qs.stringify(params, { encode: false });
 
     res.redirect(paymentUrl);
 });
