@@ -12,25 +12,17 @@ const returnUrl = "https://vnpay-odoo-production.up.railway.app/return";
 
 // ===== FORMAT DATE (GMT+7) =====
 function formatDate(date) {
-    const parts = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    }).formatToParts(date);
+    const pad = (n) => n.toString().padStart(2, '0');
 
-    const get = (type) => parts.find(p => p.type === type).value;
+    // 👉 lấy timestamp +7h (KHÔNG mutate)
+    let vnTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
 
-    return get('year') +
-           get('month') +
-           get('day') +
-           get('hour') +
-           get('minute') +
-           get('second');
+    return vnTime.getFullYear().toString() +
+        pad(vnTime.getMonth() + 1) +
+        pad(vnTime.getDate()) +
+        pad(vnTime.getHours()) +
+        pad(vnTime.getMinutes()) +
+        pad(vnTime.getSeconds());
 }
 
 // ===== SORT OBJECT (CHUẨN VNPay) =====
@@ -79,15 +71,14 @@ app.get("/pay", (req, res) => {
         ipAddr = ipAddr.split(',')[0];
     }
 
-    let date = new Date();
+    let now = new Date();
 
-    // 🔥 CREATE + EXPIRE DATE
-    let createDate = formatDate(date);
+let createDate = formatDate(now);
 
-    let expireDate = new Date();
-    expireDate.setMinutes(expireDate.getMinutes() + 15);
-    let vnp_ExpireDate = formatDate(expireDate);
+let expireDate = new Date(now.getTime() + 15 * 60 * 1000);
 
+let vnp_ExpireDate = formatDate(expireDate);
+    
     let vnp_Params = {};
     vnp_Params['vnp_Version'] = '2.1.0';
     vnp_Params['vnp_Command'] = 'pay';
