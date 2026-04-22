@@ -12,13 +12,25 @@ const returnUrl = "https://vnpay-odoo-production.up.railway.app/return";
 
 // ===== FORMAT DATE (GMT+7) =====
 function formatDate(date) {
-    const pad = (n) => n.toString().padStart(2, '0');
-    return date.getFullYear().toString() +
-        pad(date.getMonth() + 1) +
-        pad(date.getDate()) +
-        pad(date.getHours()) +
-        pad(date.getMinutes()) +
-        pad(date.getSeconds());
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Ho_Chi_Minh',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    }).formatToParts(date);
+
+    const get = (type) => parts.find(p => p.type === type).value;
+
+    return get('year') +
+           get('month') +
+           get('day') +
+           get('hour') +
+           get('minute') +
+           get('second');
 }
 
 // ===== SORT OBJECT (CHUẨN VNPay) =====
