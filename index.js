@@ -1,15 +1,19 @@
 const express = require("express");
 const crypto = require("crypto");
+const qs = require("qs");
 
 const app = express();
 
-// ===== CONFIG =====
-const vnp_TmnCode = "P34X5LCK";
-const vnp_HashSecret = "64B60W4RZVCZMO52AJ7D0OYQA5R8CFOG";
-const vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-const returnUrl = "https://vnpay-odoo-production.up.railway.app/return";
+function sortObject(obj) {
+    let sorted = {};
+    let keys = Object.keys(obj).sort();
 
-// ===== FORMAT DATE =====
+    for (let key of keys) {
+        sorted[key] = obj[key];
+    }
+    return sorted;
+}
+
 function formatDate(date) {
     const pad = (n) => n.toString().padStart(2, '0');
     return date.getFullYear().toString() +
@@ -20,71 +24,54 @@ function formatDate(date) {
         pad(date.getSeconds());
 }
 
-// ===== SORT + ENCODE PARAMS =====
-function sortObject(obj) {
-    let sorted = {};
-    let keys = Object.keys(obj).sort();
-
-    for (let key of keys) {
-        sorted[key] = encodeURIComponent(obj[key]).replace(/%20/g, "+");
-    }
-
-    return sorted;
-}
-
-// ===== HOME =====
+// HOME
 app.get("/", (req, res) => {
     res.send("Server OK");
 });
 
-// ===== RETURN =====
+// RETURN
 app.get("/return", (req, res) => {
     console.log("VNPay trả về:", req.query);
-
-    if (req.query.vnp_ResponseCode === "00") {
-        res.send("✅ Thanh toán thành công");
-    } else {
-        res.send("❌ Thanh toán thất bại");
-    }
+    res.send("Return OK");
 });
 
-// ===== PAY =====
+// PAY
 app.get("/pay", (req, res) => {
 
-    let params = {
-        vnp_Version: "2.1.0",
-        vnp_Command: "pay",
-        vnp_TmnCode: vnp_TmnCode,
-        vnp_Amount: 10000 * 100,
-        vnp_CurrCode: "VND",
-        vnp_TxnRef: Date.now().toString(),
-        vnp_OrderInfo: "Thanh toan khoa hoc",
-        vnp_OrderType: "other",
-        vnp_Locale: "vn",
-        vnp_ReturnUrl: returnUrl,
-        vnp_IpAddr: "127.0.0.1",
-        vnp_CreateDate: formatDate(new Date())
-    };
+    const vnp_TmnCode = "P34X5LCK";
+    const vnp_HashSecret = "64B60W4RZVCZMO52AJ7D0OYQA5R8CFOG";
+    const vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
-    // 🔥 SORT + ENCODE
-    let sortedParams = sortObject(params);
+    let vnp_Params = {};
+    vnp_Params['vnp_Version'] = '2.1.0';
+    vnp_Params['vnp_Command'] = 'pay';
+    vnp_Params['vnp_TmnCode'] = vnp_TmnCode;
+    vnp_Params['vnp_Locale'] = 'vn';
+    vnp_Params['vnp_CurrCode'] = 'VND';
+    vnp_Params['vnp_TxnRef'] = Date.now().toString();
+    vnp_Params['vnp_OrderInfo'] = 'Test thanh toan'; // KHÔNG dấu
+    vnp_Params['vnp_OrderType'] = 'other';
+    vnp_Params['vnp_Amount'] = 10000 * 100;
+    vnp_Params['vnp_ReturnUrl'] = 'https://vnpay-odoo-production.up.railway.app/return';
+    vnp_Params['vnp_IpAddr'] = '127.0.0.1';
+    vnp_Params['vnp_CreateDate'] = formatDate(new Date());
 
-    // 🔥 BUILD SIGN DATA
-    let signData = Object.keys(sortedParams)
-        .map(key => key + "=" + sortedParams[key])
-        .join("&");
+    // 🔥 SORT
+    vnp_Params = sortObject(vnp_Params);
 
-    // DEBUG (nếu cần)
+    // 🔥 KHÔNG ENCODE
+    let signData = qs.stringify(vnp_Params, { encode: false });
+
     console.log("SIGN DATA:", signData);
 
-    // 🔥 HASH
     let hmac = crypto.createHmac("sha512", vnp_HashSecret);
-    let signed = hmac.update(signData, 'utf-8').digest("hex");
+    let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
 
-    // 🔥 BUILD URL
-    let paymentUrl = vnp_Url + "?" + signData + "&vnp_SecureHash=" + signed;
+    vnp_Params['vnp_SecureHash'] = signed;
+
+    let paymentUrl = vnp_Url + '?' + qs.stringify(vnp_Params, { encode: false });
 
     res.redirect(paymentUrl);
 });
 
-app.listen(3000, () => console.log("Server running on port 3000"));
+app.listen(3000, () => console.log("Server running"));
