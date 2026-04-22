@@ -50,8 +50,8 @@ app.get("/return", (req, res) => {
 // ===== PAY =====
 app.get("/pay", (req, res) => {
 
-    const tmnCode = "P34X5LCK";
-    const secretKey = "64B60W4RZVCZMO52AJ7D0OYQA5R8CFOG";
+    const tmnCode = "2QXUI4J4";
+    const secretKey = "SECRETKEY";
     const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
     const returnUrl = "https://vnpay-odoo-production.up.railway.app/return";
 
