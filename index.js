@@ -13,6 +13,10 @@ const returnUrl = "https://vnpay-odoo-production.up.railway.app/return";
 // ===== FORMAT DATE (GMT+7) =====
 function formatDate(date) {
     const pad = (n) => n.toString().padStart(2, '0');
+
+    // 🔥 chuyển sang GMT+7
+    date.setHours(date.getHours() + 7);
+
     return date.getFullYear().toString() +
         pad(date.getMonth() + 1) +
         pad(date.getDate()) +
@@ -68,14 +72,12 @@ app.get("/pay", (req, res) => {
     }
 
     let date = new Date();
+let createDate = formatDate(new Date(date));
 
-    // 🔥 CREATE + EXPIRE DATE
-    let createDate = formatDate(date);
-
-    let expireDate = new Date();
-    expireDate.setMinutes(expireDate.getMinutes() + 15);
-    let vnp_ExpireDate = formatDate(expireDate);
-
+let expireDate = new Date(date);
+expireDate.setMinutes(expireDate.getMinutes() + 15);
+let vnp_ExpireDate = formatDate(expireDate);
+    
     let vnp_Params = {};
     vnp_Params['vnp_Version'] = '2.1.0';
     vnp_Params['vnp_Command'] = 'pay';
