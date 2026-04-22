@@ -75,5 +75,3 @@ app.get("/pay", (req, res) => {
 });
 
 app.listen(3000, () => console.log("Server running"));
-console.log("SIGN DATA:", signData);
-console.log("HASH:", signed);
