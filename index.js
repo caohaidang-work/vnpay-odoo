@@ -5,8 +5,8 @@ const qs = require("qs");
 const app = express();
 
 // ===== CONFIG =====
-const vnp_TmnCode = "P34X5LCK";
-const vnp_HashSecret = "64B60W4RZVCZMO52AJ7D0OYQA5R8CFOG";
+const vnp_TmnCode = "4LG143ND";
+const vnp_HashSecret = "I5L1P7VO306L3SWY3TR20EJ8OON9BLCS";
 const vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl = "https://vnpay-odoo-production.up.railway.app/return";
 
