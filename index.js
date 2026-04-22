@@ -12,6 +12,7 @@ app.get("/pay", (req, res) => {
 
     const vnp_TmnCode = "P34X5LCK";
     const vnp_HashSecret = "64B60W4RZVCZMO52AJ7D0OYQA5R8CFOG";
+    const vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 
     let params = {
         vnp_Version: "2.1.0",
