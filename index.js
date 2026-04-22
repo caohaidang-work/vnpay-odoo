@@ -10,23 +10,18 @@ const vnp_HashSecret = "64B60W4RZVCZMO52AJ7D0OYQA5R8CFOG";
 const vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const returnUrl = "https://vnpay-odoo-production.up.railway.app/return";
 
-// ===== FORMAT DATE (GMT+7 - SAFE) =====
+// ===== FORMAT DATE (GMT+7) =====
 function formatDate(date) {
     const pad = (n) => n.toString().padStart(2, '0');
-
-    // clone để tránh phá object gốc
-    let d = new Date(date.getTime());
-    d.setHours(d.getHours() + 7);
-
-    return d.getFullYear().toString() +
-        pad(d.getMonth() + 1) +
-        pad(d.getDate()) +
-        pad(d.getHours()) +
-        pad(d.getMinutes()) +
-        pad(d.getSeconds());
+    return date.getFullYear().toString() +
+        pad(date.getMonth() + 1) +
+        pad(date.getDate()) +
+        pad(date.getHours()) +
+        pad(date.getMinutes()) +
+        pad(date.getSeconds());
 }
 
-// ===== SORT OBJECT (Y CHUẨN VNPay) =====
+// ===== SORT OBJECT (CHUẨN VNPay) =====
 function sortObject(obj) {
     let sorted = {};
     let str = [];
@@ -66,22 +61,21 @@ app.get("/return", (req, res) => {
 // ===== PAY =====
 app.get("/pay", (req, res) => {
 
-    // ===== IP =====
+    // 🔥 LẤY IP THẬT
     let ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     if (ipAddr && ipAddr.includes(',')) {
         ipAddr = ipAddr.split(',')[0];
     }
 
-    // ===== DATE (SAFE) =====
-    let now = new Date();
+    let date = new Date();
 
-    let createDate = formatDate(now);
+    // 🔥 CREATE + EXPIRE DATE
+    let createDate = formatDate(date);
 
-    let expireDate = new Date(now.getTime());
+    let expireDate = new Date();
     expireDate.setMinutes(expireDate.getMinutes() + 15);
     let vnp_ExpireDate = formatDate(expireDate);
 
-    // ===== PARAMS =====
     let vnp_Params = {};
     vnp_Params['vnp_Version'] = '2.1.0';
     vnp_Params['vnp_Command'] = 'pay';
@@ -89,7 +83,7 @@ app.get("/pay", (req, res) => {
     vnp_Params['vnp_Locale'] = 'vn';
     vnp_Params['vnp_CurrCode'] = 'VND';
     vnp_Params['vnp_TxnRef'] = Date.now().toString();
-    vnp_Params['vnp_OrderInfo'] = 'Thanh toan don hang';
+    vnp_Params['vnp_OrderInfo'] = 'Thanh toan don hang'; // KHÔNG dấu
     vnp_Params['vnp_OrderType'] = 'other';
     vnp_Params['vnp_Amount'] = 10000 * 100;
     vnp_Params['vnp_ReturnUrl'] = returnUrl;
@@ -97,11 +91,12 @@ app.get("/pay", (req, res) => {
     vnp_Params['vnp_CreateDate'] = createDate;
     vnp_Params['vnp_ExpireDate'] = vnp_ExpireDate;
 
-    // ===== SORT + ENCODE =====
+    // 🔥 SORT + ENCODE (THEO DOC)
     vnp_Params = sortObject(vnp_Params);
 
-    // ===== SIGN =====
+    // 🔥 SIGN DATA (KHÔNG encode)
     let signData = qs.stringify(vnp_Params, { encode: false });
+
     console.log("SIGN DATA:", signData);
 
     let hmac = crypto.createHmac("sha512", vnp_HashSecret);
@@ -109,7 +104,7 @@ app.get("/pay", (req, res) => {
 
     vnp_Params['vnp_SecureHash'] = signed;
 
-    // ===== BUILD URL (encode = true) =====
+    // 🔥 BUILD URL (PHẢI encode = true)
     let paymentUrl = vnp_Url + '?' + qs.stringify(vnp_Params, { encode: true });
 
     res.redirect(paymentUrl);
