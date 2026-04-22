@@ -79,19 +79,17 @@ app.get("/pay", (req, res) => {
     vnp_Params = sortObject(vnp_Params);
 
     // 🔥 SIGN DATA (THEO DOC)
-    var signData = qs.stringify(vnp_Params, { encode: false });
+    let signData = qs.stringify(vnp_Params, { encode: false });
 
-    console.log("SIGN DATA:", signData);
+let hmac = crypto.createHmac("sha512", secretKey);
+let signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
 
-    var hmac = crypto.createHmac("sha512", secretKey);
-    var signed = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+vnp_Params['vnp_SecureHash'] = signed;
 
-    vnp_Params['vnp_SecureHash'] = signed;
+// 🔥 CHỖ QUAN TRỌNG
+let paymentUrl = vnpUrl + '?' + qs.stringify(vnp_Params, { encode: true });
 
-    // 🔥 BUILD URL (THEO DOC)
-    var paymentUrl = vnpUrl + '?' + qs.stringify(vnp_Params, { encode: false });
-
-    res.redirect(paymentUrl);
+res.redirect(paymentUrl);
 });
 
 app.listen(3000, () => console.log("Server running"));
