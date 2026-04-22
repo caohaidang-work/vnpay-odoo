@@ -10,8 +10,8 @@ const qs = require("qs");
 
 app.get("/pay", (req, res) => {
 
-    const vnp_TmnCode = "9704198526191432198";
-    const vnp_HashSecret = "123456";
+    const vnp_TmnCode = "P34X5LCK";
+    const vnp_HashSecret = "64B60W4RZVCZMO52AJ7D0OYQA5R8CFOG";
 
     let params = {
         vnp_Version: "2.1.0",
